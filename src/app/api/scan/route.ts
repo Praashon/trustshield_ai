@@ -89,7 +89,8 @@ export async function POST(request: NextRequest) {
 
     if (scanError) {
       console.error('[Scan API] Insert scan failed:', scanError);
-      return errorResponse('INTERNAL_ERROR', undefined, 500);
+      try { require('fs').appendFileSync('api-error.log', JSON.stringify({type: 'scanError', err: scanError}) + '\n'); } catch (e) {}
+      return errorResponse('INTERNAL_ERROR', scanError.message || JSON.stringify(scanError), 500);
     }
 
     await supabase.from('analysis_results').insert({
@@ -113,6 +114,7 @@ export async function POST(request: NextRequest) {
     }, 201);
   } catch (err) {
     console.error('[Scan API] Unexpected error:', err);
-    return errorResponse('INTERNAL_ERROR', undefined, 500);
+    try { require('fs').appendFileSync('api-error.log', JSON.stringify({type: 'unexpected', err: err instanceof Error ? err.stack : err}) + '\n'); } catch (e) {}
+    return errorResponse('INTERNAL_ERROR', err instanceof Error ? err.message : JSON.stringify(err), 500);
   }
 }
