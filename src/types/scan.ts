@@ -16,6 +16,7 @@ export interface ScanPromptInput {
 export interface ScanRequest {
   input: string;
   input_type: InputType;
+  use_pure_js?: boolean;
 }
 
 export interface ScanResponse {

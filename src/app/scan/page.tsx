@@ -4,6 +4,8 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -91,6 +93,7 @@ export default function ScanPage() {
   } = useScanStore();
 
   const [isSaved, setIsSaved] = useState(false);
+  const [usePureJs, setUsePureJs] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
 
@@ -132,7 +135,7 @@ export default function ScanPage() {
 
     try {
       const response = await submitScan(
-        { input: input.trim(), input_type: inputType },
+        { input: input.trim(), input_type: inputType, use_pure_js: usePureJs },
         abortRef.current.signal
       );
 
@@ -212,47 +215,59 @@ export default function ScanPage() {
               </div>
             </div>
 
-            <div className="mt-4 flex items-center justify-between">
-              <Button
-                id="scan-button"
-                onClick={handleScan}
-                disabled={scanStatus === 'scanning' || !input.trim()}
-                className="bg-[var(--amber)] text-[var(--amber-foreground)] hover:bg-[var(--amber)]/90 h-10 px-6"
-              >
-                {scanStatus === 'scanning' ? (
-                  <span className="flex items-center gap-2">
-                    <svg
-                      className="w-4 h-4 animate-spin"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        className="opacity-25"
-                      />
-                      <path
-                        d="M12 2a10 10 0 0 1 10 10"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    Scanning...
-                  </span>
-                ) : (
-                  'Analyze'
-                )}
-              </Button>
+            <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  id="purejs-mode" 
+                  checked={usePureJs} 
+                  onCheckedChange={setUsePureJs} 
+                />
+                <Label htmlFor="purejs-mode" className="text-sm font-medium">
+                  Fast Scan (Local Pure JS Engine)
+                </Label>
+              </div>
 
-              {scanStatus !== 'idle' && (
-                <Button variant="ghost" size="sm" onClick={reset}>
-                  Clear
+              <div className="flex gap-2">
+                {scanStatus !== 'idle' && (
+                  <Button variant="ghost" size="sm" onClick={reset}>
+                    Clear
+                  </Button>
+                )}
+                <Button
+                  id="scan-button"
+                  onClick={handleScan}
+                  disabled={scanStatus === 'scanning' || !input.trim()}
+                  className="bg-[var(--amber)] text-[var(--amber-foreground)] hover:bg-[var(--amber)]/90 h-10 px-6 shrink-0"
+                >
+                  {scanStatus === 'scanning' ? (
+                    <span className="flex items-center gap-2">
+                      <svg
+                        className="w-4 h-4 animate-spin"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                      >
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          className="opacity-25"
+                        />
+                        <path
+                          d="M12 2a10 10 0 0 1 10 10"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      Scanning...
+                    </span>
+                  ) : (
+                    'Analyze'
+                  )}
                 </Button>
-              )}
+              </div>
             </div>
           </CardContent>
         </Card>

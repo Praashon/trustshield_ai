@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       return errorResponse('INVALID_INPUT', parsed.error.issues[0]?.message);
     }
 
-    const { input, input_type } = parsed.data;
+    const { input, input_type, use_pure_js } = parsed.data;
 
     let sanitizedInput: string;
     try {
@@ -52,18 +52,22 @@ export async function POST(request: NextRequest) {
     try {
       await checkAndIncrementQuota(user.id);
 
-      const prompt = buildScanPrompt({ input: sanitizedInput, input_type });
-      const aiResponse = await callOpenRouter(SYSTEM_PROMPT, prompt);
-      const aiResult = parseAIResponse(aiResponse.content);
+      if (use_pure_js) {
+        aiExplanation = 'Analyzed locally using Pure JS Rule Engine (AI disabled).';
+      } else {
+        const prompt = buildScanPrompt({ input: sanitizedInput, input_type });
+        const aiResponse = await callOpenRouter(SYSTEM_PROMPT, prompt);
+        const aiResult = parseAIResponse(aiResponse.content);
 
-      aiExplanation = aiResult.explanation;
-      rawAiOutput = aiResult as unknown as Record<string, unknown>;
-      finalRiskLevel = aiResult.risk;
-      finalScore = aiResult.score;
-      reasons = [...ruleResult.flags, ...aiResult.reasons];
-      advice = aiResult.advice;
-      modelUsed = aiResponse.model;
-      latencyMs = aiResponse.latencyMs;
+        aiExplanation = aiResult.explanation;
+        rawAiOutput = aiResult as unknown as Record<string, unknown>;
+        finalRiskLevel = aiResult.risk;
+        finalScore = aiResult.score;
+        reasons = [...ruleResult.flags, ...aiResult.reasons];
+        advice = aiResult.advice;
+        modelUsed = aiResponse.model;
+        latencyMs = aiResponse.latencyMs;
+      }
     } catch (err) {
       if (err instanceof AppError && err.code === 'RATE_LIMIT_EXCEEDED') {
         aiExplanation = 'AI analysis unavailable -- showing rule-based result only. Daily scan limit reached.';
