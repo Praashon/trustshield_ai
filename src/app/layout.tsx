@@ -3,6 +3,7 @@ import { Inter, Outfit, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/shared/ThemeProvider";
+import Script from "next/script";
 import "./globals.css";
 
 const inter = Inter({
@@ -57,6 +58,7 @@ export default function RootLayout({
             {children}
           </TooltipProvider>
           <Toaster position="bottom-right" richColors />
+          <Script src="https://js.puter.com/v2/" strategy="beforeInteractive" />
         </ThemeProvider>
       </body>
     </html>

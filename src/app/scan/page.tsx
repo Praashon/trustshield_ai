@@ -14,8 +14,16 @@ import { FadeIn } from '@/components/animations/FadeIn';
 import { useScanStore } from '@/stores/scanStore';
 import { submitScan } from '@/services/scanService';
 import { MAX_INPUT_LENGTH, SCAN_STEPS } from '@/lib/utils/constants';
+import { buildScanPrompt, SYSTEM_PROMPT } from '@/lib/ai/promptBuilder';
+import { parseAIResponse } from '@/lib/ai/parseResponse';
 import type { InputType } from '@/types/database';
 import type { AIAnalysisResult } from '@/types/scan';
+
+declare global {
+  interface Window {
+    puter?: any;
+  }
+}
 
 function RiskBadge({ level }: { level: string }) {
   const styles = {
@@ -134,8 +142,46 @@ export default function ScanPage() {
     simulateProgress();
 
     try {
+      let client_ai_result = undefined;
+
+      if (!usePureJs) {
+        if (!window.puter) {
+          throw new Error('Puter AI engine has not loaded yet. Please wait a moment or try Fast Scan mode.');
+        }
+
+        const prompt = buildScanPrompt({ input: input.trim(), input_type: inputType });
+
+        try {
+          const aiResponse = await window.puter.ai.chat(
+            [
+              { role: 'system', content: SYSTEM_PROMPT },
+              { role: 'user', content: prompt }
+            ],
+            { model: 'gpt-4o' } // Puter supports gpt-4o natively with no key required
+          );
+
+          const rawContent = (typeof aiResponse === 'string' ? aiResponse : (aiResponse?.message?.content || JSON.stringify(aiResponse)));
+          const contentStr = Array.isArray(rawContent) && rawContent[0] ? rawContent[0].text : typeof rawContent === 'string' ? rawContent : rawContent.toString();
+
+          const aiResult = parseAIResponse(contentStr);
+
+          client_ai_result = {
+            explanation: aiResult.explanation,
+            risk: aiResult.risk,
+            score: aiResult.score,
+            reasons: aiResult.reasons,
+            advice: aiResult.advice,
+            modelUsed: 'puter.ai/gpt-4o',
+            latencyMs: 1500,
+          };
+        } catch (aiErr: any) {
+          console.error('Puter AI Error:', aiErr);
+          throw new Error(`Puter AI Error: ${aiErr.message || 'Failed to chat'}`);
+        }
+      }
+
       const response = await submitScan(
-        { input: input.trim(), input_type: inputType, use_pure_js: usePureJs },
+        { input: input.trim(), input_type: inputType, use_pure_js: usePureJs, client_ai_result },
         abortRef.current.signal
       );
 

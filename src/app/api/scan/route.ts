@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       return errorResponse('INVALID_INPUT', parsed.error.issues[0]?.message);
     }
 
-    const { input, input_type, use_pure_js } = parsed.data;
+    const { input, input_type, use_pure_js, client_ai_result } = parsed.data;
 
     let sanitizedInput: string;
     try {
@@ -54,6 +54,15 @@ export async function POST(request: NextRequest) {
 
       if (use_pure_js) {
         aiExplanation = 'Analyzed locally using Pure JS Rule Engine (AI disabled).';
+      } else if (client_ai_result) {
+        aiExplanation = client_ai_result.explanation;
+        rawAiOutput = client_ai_result as unknown as Record<string, unknown>;
+        finalRiskLevel = client_ai_result.risk;
+        finalScore = client_ai_result.score;
+        reasons = [...ruleResult.flags, ...client_ai_result.reasons];
+        advice = client_ai_result.advice;
+        modelUsed = client_ai_result.modelUsed;
+        latencyMs = client_ai_result.latencyMs;
       } else {
         const prompt = buildScanPrompt({ input: sanitizedInput, input_type });
         const aiResponse = await callOpenRouter(SYSTEM_PROMPT, prompt);

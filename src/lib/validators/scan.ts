@@ -7,6 +7,15 @@ export const scanRequestSchema = z.object({
     .max(2000, 'Input exceeds 2,000 character limit'),
   input_type: z.enum(['url', 'text', 'email']),
   use_pure_js: z.boolean().optional(),
+  client_ai_result: z.object({
+    explanation: z.string(),
+    risk: z.enum(['safe', 'suspicious', 'dangerous']),
+    score: z.number().int(),
+    reasons: z.array(z.string()),
+    advice: z.array(z.string()),
+    modelUsed: z.string(),
+    latencyMs: z.number(),
+  }).optional(),
 });
 
 export const saveScanSchema = z.object({

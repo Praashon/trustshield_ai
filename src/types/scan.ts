@@ -17,6 +17,15 @@ export interface ScanRequest {
   input: string;
   input_type: InputType;
   use_pure_js?: boolean;
+  client_ai_result?: {
+    explanation: string;
+    risk: RiskLevel;
+    score: number;
+    reasons: string[];
+    advice: string[];
+    modelUsed: string;
+    latencyMs: number;
+  };
 }
 
 export interface ScanResponse {
